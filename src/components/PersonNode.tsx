@@ -3,6 +3,7 @@ import { Handle, Position } from 'reactflow'
 import type { NodeProps } from 'reactflow'
 import type { Person } from '../types/family'
 import { format } from 'date-fns'
+import { formatPersonName, getPersonInitial } from '../utils/nameFormatter'
 
 interface PersonNodeData {
   person: Person
@@ -76,12 +77,12 @@ export const PersonNode = memo(({ data, selected }: NodeProps<PersonNodeData>) =
           <div className="mb-2 flex justify-center">
             <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
               <span className="text-gray-400 text-xs font-semibold">
-                {person.name.charAt(0).toUpperCase()}
+                {getPersonInitial(person)}
               </span>
             </div>
           </div>
         )}
-        <div className="font-semibold text-gray-800 text-sm mb-1">{person.name}</div>
+        <div className="font-semibold text-gray-800 text-sm mb-1">{formatPersonName(person)}</div>
         {birthDateFormatted && (
           <div className="text-xs text-gray-600">
             {birthDateFormatted}

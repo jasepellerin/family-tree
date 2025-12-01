@@ -12,12 +12,12 @@ interface FamilyTreeContextType {
   addRelationship: (
     personId: string,
     relatedId: string,
-    type: 'parent' | 'child' | 'partner'
+    type: 'parent' | 'child' | 'partner' | 'spouse'
   ) => void
   removeRelationship: (
     personId: string,
     relatedId: string,
-    type: 'parent' | 'child' | 'partner'
+    type: 'parent' | 'child' | 'partner' | 'spouse'
   ) => void
 }
 
@@ -68,6 +68,7 @@ export const FamilyTreeProvider = ({ children }: FamilyTreeProviderProps) => {
       parentIds: personData.parentIds || [],
       childIds: personData.childIds || [],
       partnerIds: personData.partnerIds || [],
+      spouseIds: personData.spouseIds || [],
     }
     setPeople((prev) => [...prev, newPerson])
     return newPerson
@@ -88,6 +89,7 @@ export const FamilyTreeProvider = ({ children }: FamilyTreeProviderProps) => {
         parentIds: person.parentIds.filter((pid) => pid !== id),
         childIds: person.childIds.filter((cid) => cid !== id),
         partnerIds: person.partnerIds.filter((pid) => pid !== id),
+        spouseIds: person.spouseIds.filter((sid) => sid !== id),
       }))
     })
   }
@@ -99,7 +101,7 @@ export const FamilyTreeProvider = ({ children }: FamilyTreeProviderProps) => {
   const addRelationship = (
     personId: string,
     relatedId: string,
-    type: 'parent' | 'child' | 'partner'
+    type: 'parent' | 'child' | 'partner' | 'spouse'
   ) => {
     setPeople((prev) => {
       const updated = prev.map((person) => {
@@ -141,6 +143,15 @@ export const FamilyTreeProvider = ({ children }: FamilyTreeProviderProps) => {
             }
           }
         }
+        if (type === 'spouse' && person.id === relatedId) {
+          const spouseIds = person.spouseIds || []
+          if (!spouseIds.includes(personId)) {
+            return {
+              ...person,
+              spouseIds: [...spouseIds, personId],
+            }
+          }
+        }
         return person
       })
       return updated
@@ -150,7 +161,7 @@ export const FamilyTreeProvider = ({ children }: FamilyTreeProviderProps) => {
   const removeRelationship = (
     personId: string,
     relatedId: string,
-    type: 'parent' | 'child' | 'partner'
+    type: 'parent' | 'child' | 'partner' | 'spouse'
   ) => {
     setPeople((prev) => {
       const updated = prev.map((person) => {
@@ -179,6 +190,12 @@ export const FamilyTreeProvider = ({ children }: FamilyTreeProviderProps) => {
           return {
             ...person,
             partnerIds: person.partnerIds.filter((id) => id !== personId),
+          }
+        }
+        if (type === 'spouse' && person.id === relatedId) {
+          return {
+            ...person,
+            spouseIds: person.spouseIds.filter((id) => id !== personId),
           }
         }
         return person

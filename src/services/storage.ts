@@ -43,6 +43,7 @@ export const loadFamilyTree = (): Person[] => {
       parentIds: person.parentIds || [],
       childIds: person.childIds || [],
       partnerIds: person.partnerIds || [],
+      spouseIds: person.spouseIds || [],
       photo: person.photo || undefined,
     }))
 

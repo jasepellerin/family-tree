@@ -27,15 +27,16 @@ const AppContent = () => {
     setShowForm(true)
   }
 
-  const handleFormSubmit = (data: Omit<Person, 'id' | 'parentIds' | 'childIds' | 'partnerIds'>) => {
+  const handleFormSubmit = (data: Omit<Person, 'id' | 'parentIds' | 'childIds' | 'partnerIds' | 'spouseIds'>) => {
     if (selectedPerson) {
       updatePerson(selectedPerson.id, data)
     } else {
-      const newPerson = addPerson({
+      const newPerson =       addPerson({
         ...data,
         parentIds: [],
         childIds: [],
         partnerIds: [],
+        spouseIds: [],
       })
 
       // If we're adding a relationship, create it now
