@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import ReactFlow, { Background, Controls, ReactFlowProvider } from 'reactflow'
 import type { Node, Edge } from 'reactflow'
-import dagre from 'dagre'
+import { layoutFromMap } from 'entitree-flex'
+import type { TreeNode } from 'entitree-flex'
 import { useFamilyTree } from '../context/FamilyTreeContext'
 import { PersonNode } from './PersonNode'
 import type { Person } from '../types/family'
@@ -16,7 +17,7 @@ const nodeTypes = {
   person: PersonNode,
 }
 
-// Clean dagre-based hierarchical layout
+// Entitree-flex based hierarchical layout
 const calculateLayout = (people: Person[]): { nodes: Node[]; edges: Edge[] } => {
   if (people.length === 0) {
     return { nodes: [], edges: [] }
@@ -25,40 +26,56 @@ const calculateLayout = (people: Person[]): { nodes: Node[]; edges: Edge[] } => 
   const nodeWidth = 180
   const nodeHeight = 120
 
-  // Create dagre graph
-  const graph = new dagre.graphlib.Graph()
-  graph.setDefaultEdgeLabel(() => ({}))
-  graph.setGraph({
-    rankdir: 'TB',
-    nodesep: 250,
-    ranksep: 200,
-    marginx: 50,
-    marginy: 50,
-  })
+  // Find root nodes (people with no parents)
+  const rootNodes = people.filter((person) => person.parentIds.length === 0)
+  const rootId = rootNodes.length > 0 ? rootNodes[0].id : people[0].id
 
-  // Add nodes to dagre graph
+  // Convert Person[] to entitree-flex map format
+  interface EntitreeNode {
+    id: string
+    person: Person
+    width: number
+    height: number
+    children: string[]
+    parents: string[]
+    spouses: string[]
+  }
+
+  const treeMap: Record<string, EntitreeNode> = {}
   people.forEach((person) => {
-    graph.setNode(person.id, { width: nodeWidth, height: nodeHeight })
+    const allPartners = [...person.partnerIds, ...person.spouseIds]
+    treeMap[person.id] = {
+      id: person.id,
+      person,
+      width: nodeWidth,
+      height: nodeHeight,
+      children: person.childIds,
+      parents: person.parentIds,
+      spouses: allPartners,
+    }
   })
 
-  // Add parent-child edges (directed, these define the hierarchy)
-  people.forEach((person) => {
-    person.childIds.forEach((childId) => {
-      graph.setEdge(person.id, childId)
-    })
+  // Run entitree-flex layout
+  const layoutResult = layoutFromMap(rootId, treeMap, {
+    orientation: 'vertical',
+    nodeWidth,
+    nodeHeight,
+    firstDegreeSpacing: 250, // Spacing between siblings (partners)
+    secondDegreeSpacing: 250, // Spacing between different families
+    sourceTargetSpacing: 200, // Vertical spacing between levels
+    nextAfterSpacing: 250, // Spacing for spouses/partners
+    targetsAccessor: 'children',
+    sourcesAccessor: 'parents',
+    nextAfterAccessor: 'spouses',
   })
 
-  // Run dagre layout
-  dagre.layout(graph)
-
-  // Extract positions from dagre and create React Flow nodes
-  const nodes: Node[] = graph.nodes().map((nodeId) => {
-    const node = graph.node(nodeId)
-    const person = people.find((p) => p.id === nodeId)!
+  // Convert entitree-flex nodes to React Flow nodes
+  const nodes: Node[] = layoutResult.nodes.map((treeNode: TreeNode<EntitreeNode>) => {
+    const person = treeNode.person
     return {
-      id: nodeId,
+      id: treeNode.id as string,
       type: 'person',
-      position: { x: node.x - nodeWidth / 2, y: node.y - nodeHeight / 2 },
+      position: { x: treeNode.x, y: treeNode.y },
       data: {
         person,
         onNodeClick: () => {
