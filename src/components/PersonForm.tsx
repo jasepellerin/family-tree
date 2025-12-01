@@ -6,7 +6,9 @@ import { isValidISODate, validateDateRange } from '../utils/dateValidator'
 
 interface PersonFormProps {
   person?: Person
-  onSubmit: (data: Omit<Person, 'id' | 'parentIds' | 'childIds' | 'partnerIds' | 'spouseIds'>) => void
+  onSubmit: (
+    data: Omit<Person, 'id' | 'parentIds' | 'childIds' | 'partnerIds' | 'spouseIds'>
+  ) => void
   onCancel: () => void
   onDelete?: () => void
   relationshipHint?: string
@@ -31,7 +33,9 @@ export const PersonForm = ({
   const [notes, setNotes] = useState('')
   const [photo, setPhoto] = useState<string>('')
   const [selectedPersonId, setSelectedPersonId] = useState<string>('')
-  const [relationshipType, setRelationshipType] = useState<'parent' | 'child' | 'partner' | 'spouse'>('parent')
+  const [relationshipType, setRelationshipType] = useState<
+    'parent' | 'child' | 'partner' | 'spouse'
+  >('parent')
   const [birthDateError, setBirthDateError] = useState<string | null>(null)
   const [deathDateError, setDeathDateError] = useState<string | null>(null)
 
@@ -74,14 +78,17 @@ export const PersonForm = ({
     }
   }, [person])
 
-  const formatDateInput = (value: string, cursorPos: number): { formatted: string; newCursorPos: number } => {
+  const formatDateInput = (
+    value: string,
+    cursorPos: number
+  ): { formatted: string; newCursorPos: number } => {
     const beforeCursor = value.slice(0, cursorPos)
     const digitsBefore = beforeCursor.replace(/\D/g, '').length
     const allDigits = value.replace(/\D/g, '')
-    
+
     let formatted = ''
     let newCursorPos = cursorPos
-    
+
     if (allDigits.length <= 4) {
       formatted = allDigits
       newCursorPos = digitsBefore
@@ -98,7 +105,7 @@ export const PersonForm = ({
         newCursorPos = Math.min(digitsBefore + 2, formatted.length)
       }
     }
-    
+
     return { formatted, newCursorPos }
   }
 
@@ -106,14 +113,14 @@ export const PersonForm = ({
     const input = e.target
     const value = input.value
     const cursorPos = input.selectionStart || 0
-    
+
     const { formatted, newCursorPos } = formatDateInput(value, cursorPos)
     setBirthDate(formatted)
-    
+
     setTimeout(() => {
       input.setSelectionRange(newCursorPos, newCursorPos)
     }, 0)
-    
+
     if (birthDateError) {
       if (!formatted.trim()) {
         setBirthDateError(null)
@@ -136,14 +143,14 @@ export const PersonForm = ({
     const input = e.target
     const value = input.value
     const cursorPos = input.selectionStart || 0
-    
+
     const { formatted, newCursorPos } = formatDateInput(value, cursorPos)
     setDeathDate(formatted)
-    
+
     setTimeout(() => {
       input.setSelectionRange(newCursorPos, newCursorPos)
     }, 0)
-    
+
     if (deathDateError) {
       if (!formatted.trim()) {
         setDeathDateError(null)
@@ -374,7 +381,6 @@ export const PersonForm = ({
             <option value="female">Female</option>
             <option value="non-binary">Non-binary</option>
             <option value="other">Other</option>
-            <option value="prefer-not-to-say">Prefer not to say</option>
           </select>
         </div>
 
@@ -394,9 +400,7 @@ export const PersonForm = ({
               birthDateError ? 'border-red-500' : 'border-gray-300'
             }`}
           />
-          {birthDateError && (
-            <p className="mt-1 text-sm text-red-600">{birthDateError}</p>
-          )}
+          {birthDateError && <p className="mt-1 text-sm text-red-600">{birthDateError}</p>}
         </div>
 
         <div>
@@ -415,9 +419,7 @@ export const PersonForm = ({
               deathDateError ? 'border-red-500' : 'border-gray-300'
             }`}
           />
-          {deathDateError && (
-            <p className="mt-1 text-sm text-red-600">{deathDateError}</p>
-          )}
+          {deathDateError && <p className="mt-1 text-sm text-red-600">{deathDateError}</p>}
         </div>
 
         <div>

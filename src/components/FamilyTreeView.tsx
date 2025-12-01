@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import ReactFlow, { Background, Controls, ReactFlowProvider } from 'reactflow'
 import type { Node, Edge } from 'reactflow'
+import dagre from 'dagre'
 import { useFamilyTree } from '../context/FamilyTreeContext'
 import { PersonNode } from './PersonNode'
 import type { Person } from '../types/family'
@@ -15,81 +16,60 @@ const nodeTypes = {
   person: PersonNode,
 }
 
-// Simple hierarchical layout algorithm
+// Clean dagre-based hierarchical layout
 const calculateLayout = (people: Person[]): { nodes: Node[]; edges: Edge[] } => {
   if (people.length === 0) {
     return { nodes: [], edges: [] }
   }
 
-  const horizontalSpacing = 250
-  const verticalSpacing = 200
+  const nodeWidth = 180
+  const nodeHeight = 120
 
-  // Find root nodes (people with no parents)
-  const rootNodes = people.filter((person) => person.parentIds.length === 0)
+  // Create dagre graph
+  const graph = new dagre.graphlib.Graph()
+  graph.setDefaultEdgeLabel(() => ({}))
+  graph.setGraph({
+    rankdir: 'TB',
+    nodesep: 250,
+    ranksep: 200,
+    marginx: 50,
+    marginy: 50,
+  })
 
-  // If no root nodes, use the first person as root
-  const roots = rootNodes.length > 0 ? rootNodes : [people[0]]
-
-  const nodes: Node[] = []
-  const edges: Edge[] = []
-  const visited = new Set<string>()
-  const positions = new Map<string, { x: number; y: number }>()
-
-  // BFS to assign levels
-  const levelMap = new Map<string, number>()
-  const queue: { person: Person; level: number }[] = roots.map((p) => ({ person: p, level: 0 }))
-
-  while (queue.length > 0) {
-    const { person, level } = queue.shift()!
-    if (visited.has(person.id)) continue
-
-    visited.add(person.id)
-    levelMap.set(person.id, level)
-
-    // Add children to queue
-    person.childIds.forEach((childId) => {
-      const child = people.find((p) => p.id === childId)
-      if (child && !visited.has(childId)) {
-        queue.push({ person: child, level: level + 1 })
-      }
-    })
-  }
-
-  // Group by level
-  const levelGroups = new Map<number, Person[]>()
+  // Add nodes to dagre graph
   people.forEach((person) => {
-    const level = levelMap.get(person.id) ?? 0
-    if (!levelGroups.has(level)) {
-      levelGroups.set(level, [])
-    }
-    levelGroups.get(level)!.push(person)
+    graph.setNode(person.id, { width: nodeWidth, height: nodeHeight })
   })
 
-  // Calculate positions
-  levelGroups.forEach((persons, level) => {
-    const y = level * verticalSpacing
-    const totalWidth = persons.length * horizontalSpacing
-    const startX = -totalWidth / 2 + horizontalSpacing / 2
-
-    persons.forEach((person, index) => {
-      const x = startX + index * horizontalSpacing
-      positions.set(person.id, { x, y })
-
-      nodes.push({
-        id: person.id,
-        type: 'person',
-        position: { x, y },
-        data: {
-          person,
-          onNodeClick: () => {
-            // This will be set by the parent component
-          },
-        },
-      })
+  // Add parent-child edges (directed, these define the hierarchy)
+  people.forEach((person) => {
+    person.childIds.forEach((childId) => {
+      graph.setEdge(person.id, childId)
     })
   })
 
-  // Create edges for parent-child relationships
+  // Run dagre layout
+  dagre.layout(graph)
+
+  // Extract positions from dagre and create React Flow nodes
+  const nodes: Node[] = graph.nodes().map((nodeId) => {
+    const node = graph.node(nodeId)
+    const person = people.find((p) => p.id === nodeId)!
+    return {
+      id: nodeId,
+      type: 'person',
+      position: { x: node.x - nodeWidth / 2, y: node.y - nodeHeight / 2 },
+      data: {
+        person,
+        onNodeClick: () => {
+          // This will be set by the parent component
+        },
+      },
+    }
+  })
+
+  // Create React Flow edges for parent-child relationships
+  const edges: Edge[] = []
   people.forEach((person) => {
     person.childIds.forEach((childId) => {
       edges.push({
@@ -99,6 +79,23 @@ const calculateLayout = (people: Person[]): { nodes: Node[]; edges: Edge[] } => 
         type: 'smoothstep',
         animated: false,
       })
+    })
+  })
+
+  // Create edges for partner/spouse relationships (dashed lines)
+  people.forEach((person) => {
+    const allPartners = [...person.partnerIds, ...person.spouseIds]
+    allPartners.forEach((partnerId) => {
+      if (person.id < partnerId) {
+        edges.push({
+          id: `edge-partner-${person.id}-${partnerId}`,
+          source: person.id,
+          target: partnerId,
+          type: 'straight',
+          style: { stroke: '#9ca3af', strokeWidth: 2, strokeDasharray: '5,5' },
+          animated: false,
+        })
+      }
     })
   })
 
