@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import ReactFlow, { Background, Controls, MiniMap, ReactFlowProvider } from 'reactflow'
+import ReactFlow, { Background, Controls, ReactFlowProvider } from 'reactflow'
 import type { Node, Edge } from 'reactflow'
 import { useFamilyTree } from '../context/FamilyTreeContext'
 import { PersonNode } from './PersonNode'
@@ -7,6 +7,8 @@ import type { Person } from '../types/family'
 
 interface FamilyTreeViewProps {
   onNodeClick: (personId: string) => void
+  onAddParent?: (personId: string) => void
+  onAddChild?: (personId: string) => void
 }
 
 const nodeTypes = {
@@ -103,17 +105,23 @@ const calculateLayout = (people: Person[]): { nodes: Node[]; edges: Edge[] } => 
   return { nodes, edges }
 }
 
-const FamilyTreeViewInner = ({ onNodeClick }: FamilyTreeViewProps) => {
+const FamilyTreeViewInner = ({
+  onNodeClick,
+  onAddParent,
+  onAddChild,
+}: FamilyTreeViewProps) => {
   const { people } = useFamilyTree()
 
   const { nodes, edges } = useMemo(() => {
     const layout = calculateLayout(people)
-    // Update onNodeClick in node data
+    // Update handlers in node data
     layout.nodes.forEach((node) => {
       node.data.onNodeClick = onNodeClick
+      node.data.onAddParent = onAddParent
+      node.data.onAddChild = onAddChild
     })
     return layout
-  }, [people, onNodeClick])
+  }, [people, onNodeClick, onAddParent, onAddChild])
 
   if (people.length === 0) {
     return (
@@ -137,13 +145,10 @@ const FamilyTreeViewInner = ({ onNodeClick }: FamilyTreeViewProps) => {
         minZoom={0.1}
         maxZoom={2}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        proOptions={{ hideAttribution: true }}
       >
         <Background color="#e5e7eb" gap={16} />
         <Controls />
-        <MiniMap
-          nodeColor={() => '#6366f1'}
-          maskColor="rgba(0, 0, 0, 0.1)"
-        />
       </ReactFlow>
     </div>
   )

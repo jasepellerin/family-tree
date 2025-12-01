@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type { Person } from '../types/family'
 import { loadFamilyTree, saveFamilyTree } from '../services/storage'
@@ -36,24 +36,29 @@ interface FamilyTreeProviderProps {
 }
 
 export const FamilyTreeProvider = ({ children }: FamilyTreeProviderProps) => {
-  const [people, setPeople] = useState<Person[]>([])
-
-  // Load from localStorage on mount
-  useEffect(() => {
+  // Initialize state directly from localStorage to avoid race condition
+  const [people, setPeople] = useState<Person[]>(() => {
     try {
       const loaded = loadFamilyTree()
-      setPeople(loaded)
+      console.log('Initial state loaded:', loaded.length, 'people')
+      return loaded
     } catch (error) {
-      console.error('Error loading family tree:', error)
-      setPeople([])
+      console.error('Error loading initial state:', error)
+      return []
     }
-  }, [])
+  })
+  const isInitialMount = useRef(true)
 
-  // Save to localStorage whenever people change
+  // Save to localStorage whenever people change (but not on initial mount)
   useEffect(() => {
-    if (people.length > 0 || localStorage.getItem('family-tree-data')) {
-      saveFamilyTree(people)
+    // Skip save on initial mount to avoid overwriting with empty array
+    if (isInitialMount.current) {
+      console.log('Skipping save - initial mount')
+      isInitialMount.current = false
+      return
     }
+    console.log('Saving to localStorage:', people.length, 'people')
+    saveFamilyTree(people)
   }, [people])
 
   const addPerson = (personData: Omit<Person, 'id'>): Person => {

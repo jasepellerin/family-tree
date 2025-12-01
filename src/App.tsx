@@ -6,10 +6,14 @@ import { DeleteConfirmDialog } from './components/DeleteConfirmDialog'
 import type { Person } from './types/family'
 
 const AppContent = () => {
-  const { addPerson, updatePerson, deletePerson, getPerson } = useFamilyTree()
+  const { addPerson, updatePerson, deletePerson, getPerson, addRelationship } = useFamilyTree()
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [personToDelete, setPersonToDelete] = useState<Person | null>(null)
+  const [pendingRelationship, setPendingRelationship] = useState<{
+    type: 'parent' | 'child'
+    targetPersonId: string
+  } | null>(null)
 
   const selectedPerson = selectedPersonId ? getPerson(selectedPersonId) : undefined
 
@@ -27,12 +31,24 @@ const AppContent = () => {
     if (selectedPerson) {
       updatePerson(selectedPerson.id, data)
     } else {
-      addPerson({
+      const newPerson = addPerson({
         ...data,
         parentIds: [],
         childIds: [],
         partnerIds: [],
       })
+
+      // If we're adding a relationship, create it now
+      if (pendingRelationship) {
+        if (pendingRelationship.type === 'parent') {
+          // New person is parent of target person
+          addRelationship(pendingRelationship.targetPersonId, newPerson.id, 'parent')
+        } else {
+          // New person is child of target person
+          addRelationship(pendingRelationship.targetPersonId, newPerson.id, 'child')
+        }
+        setPendingRelationship(null)
+      }
     }
     setShowForm(false)
     setSelectedPersonId(null)
@@ -41,6 +57,19 @@ const AppContent = () => {
   const handleFormCancel = () => {
     setShowForm(false)
     setSelectedPersonId(null)
+    setPendingRelationship(null)
+  }
+
+  const handleAddParent = (personId: string) => {
+    setSelectedPersonId(null)
+    setPendingRelationship({ type: 'parent', targetPersonId: personId })
+    setShowForm(true)
+  }
+
+  const handleAddChild = (personId: string) => {
+    setSelectedPersonId(null)
+    setPendingRelationship({ type: 'child', targetPersonId: personId })
+    setShowForm(true)
   }
 
   const handleDeleteClick = () => {
@@ -79,7 +108,11 @@ const AppContent = () => {
       <div className="flex-1 flex relative overflow-hidden">
         {/* Tree View */}
         <div className="flex-1">
-          <FamilyTreeView onNodeClick={handleNodeClick} />
+          <FamilyTreeView
+            onNodeClick={handleNodeClick}
+            onAddParent={handleAddParent}
+            onAddChild={handleAddChild}
+          />
         </div>
 
         {/* Form Sidebar */}
@@ -91,6 +124,13 @@ const AppContent = () => {
                 onSubmit={handleFormSubmit}
                 onCancel={handleFormCancel}
                 onDelete={selectedPerson ? handleDeleteClick : undefined}
+                relationshipHint={
+                  pendingRelationship
+                    ? `This person will be added as a ${
+                        pendingRelationship.type === 'parent' ? 'parent' : 'child'
+                      } of ${getPerson(pendingRelationship.targetPersonId)?.name || 'the selected person'}.`
+                    : undefined
+                }
               />
             </div>
           </div>

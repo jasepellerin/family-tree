@@ -4,6 +4,7 @@ export interface Person {
   birthDate?: string // ISO date string
   deathDate?: string // ISO date string
   notes?: string
+  photo?: string // Base64 data URL or image URL
   parentIds: string[] // Array of parent IDs
   childIds: string[] // Array of child IDs
   partnerIds: string[] // Array of partner/spouse IDs
