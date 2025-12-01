@@ -37,11 +37,7 @@ export const PersonNode = memo(({ data, selected }: NodeProps<PersonNodeData>) =
       <Handle
         type="target"
         position={Position.Top}
-        className="!w-6 !h-6 cursor-pointer hover:!bg-indigo-600 transition-colors border-2 border-white shadow-md"
-        style={{
-          backgroundColor: '#4b5563',
-          top: '-12px',
-        }}
+        className="!w-5 !h-5 !cursor-pointer !bg-gray-600 !top-[-10px] hover:!bg-indigo-600 transition-colors !border-none"
         onClick={(e) => {
           e.stopPropagation()
           if (onAddParent) {
@@ -49,21 +45,22 @@ export const PersonNode = memo(({ data, selected }: NodeProps<PersonNodeData>) =
           }
         }}
       >
-        <div
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
           style={{
             position: 'absolute',
-            top: 'calc(50% - 2.4px)',
-            left: 'calc(50% + .2px)',
+            top: '50%',
+            left: '50%',
             transform: 'translate(-50%, -50%)',
-            color: 'white',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            lineHeight: '1',
             pointerEvents: 'none',
           }}
         >
-          +
-        </div>
+          <path d="M8 3V13M3 8H13" stroke="white" strokeWidth="3" />
+        </svg>
       </Handle>
 
       <div className="text-center">
@@ -100,11 +97,7 @@ export const PersonNode = memo(({ data, selected }: NodeProps<PersonNodeData>) =
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!w-6 !h-6 cursor-pointer hover:!bg-indigo-600 transition-colors border-2 border-white shadow-md"
-        style={{
-          backgroundColor: '#4b5563',
-          bottom: '-12px',
-        }}
+        className="!w-5 !h-5 !cursor-pointer !bg-gray-600 !bottom-[-10px] hover:!bg-indigo-600 transition-colors !border-none"
         onClick={(e) => {
           e.stopPropagation()
           if (onAddChild) {
@@ -112,21 +105,22 @@ export const PersonNode = memo(({ data, selected }: NodeProps<PersonNodeData>) =
           }
         }}
       >
-        <div
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
           style={{
             position: 'absolute',
-            top: 'calc(50% - 2.4px)',
-            left: 'calc(50% + .2px)',
+            top: '50%',
+            left: '50%',
             transform: 'translate(-50%, -50%)',
-            color: 'white',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            lineHeight: '1',
             pointerEvents: 'none',
           }}
         >
-          +
-        </div>
+          <path d="M8 3V13M3 8H13" stroke="white" strokeWidth="3" />
+        </svg>
       </Handle>
     </div>
   )

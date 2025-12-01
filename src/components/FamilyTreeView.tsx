@@ -105,11 +105,7 @@ const calculateLayout = (people: Person[]): { nodes: Node[]; edges: Edge[] } => 
   return { nodes, edges }
 }
 
-const FamilyTreeViewInner = ({
-  onNodeClick,
-  onAddParent,
-  onAddChild,
-}: FamilyTreeViewProps) => {
+const FamilyTreeViewInner = ({ onNodeClick, onAddParent, onAddChild }: FamilyTreeViewProps) => {
   const { people } = useFamilyTree()
 
   const { nodes, edges } = useMemo(() => {
