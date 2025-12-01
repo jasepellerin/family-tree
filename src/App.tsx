@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { FamilyTreeProvider, useFamilyTree } from './context/FamilyTreeContext'
 import { FamilyTreeView } from './components/FamilyTreeView'
 import { PersonForm } from './components/PersonForm'
 import { DeleteConfirmDialog } from './components/DeleteConfirmDialog'
+import { ImportConfirmDialog } from './components/ImportConfirmDialog'
+import { exportFamilyTree, importFamilyTree } from './services/storage'
 import type { Person } from './types/family'
 
 const AppContent = () => {
-  const { addPerson, updatePerson, deletePerson, getPerson, addRelationship } = useFamilyTree()
+  const { people, addPerson, updatePerson, deletePerson, getPerson, addRelationship, importPeople } =
+    useFamilyTree()
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [personToDelete, setPersonToDelete] = useState<Person | null>(null)
@@ -14,6 +17,8 @@ const AppContent = () => {
     type: 'parent' | 'child'
     targetPersonId: string
   } | null>(null)
+  const [pendingImport, setPendingImport] = useState<Person[] | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const selectedPerson = selectedPersonId ? getPerson(selectedPersonId) : undefined
 
@@ -92,17 +97,79 @@ const AppContent = () => {
     setPersonToDelete(null)
   }
 
+  const handleExport = () => {
+    try {
+      exportFamilyTree(people)
+    } catch (error) {
+      alert('Failed to export family tree. Please try again.')
+      console.error('Export error:', error)
+    }
+  }
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const importedPeople = await importFamilyTree(file)
+      setPendingImport(importedPeople)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to import file. Please try again.')
+      console.error('Import error:', error)
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleImportConfirm = () => {
+    if (pendingImport) {
+      importPeople(pendingImport)
+      setPendingImport(null)
+    }
+  }
+
+  const handleImportCancel = () => {
+    setPendingImport(null)
+  }
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Toolbar */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
         <h1 className="text-2xl font-bold text-gray-800">Family Tree</h1>
-        <button
-          onClick={handleAddPerson}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-        >
-          Add Person
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+          >
+            Export
+          </button>
+          <button
+            onClick={handleImportClick}
+            className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+          >
+            Import
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <button
+            onClick={handleAddPerson}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+          >
+            Add Person
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -144,6 +211,15 @@ const AppContent = () => {
           personName={personToDelete.name}
           onConfirm={handleDeleteConfirm}
           onCancel={handleDeleteCancel}
+        />
+      )}
+
+      {/* Import Confirmation Dialog */}
+      {pendingImport && (
+        <ImportConfirmDialog
+          peopleCount={pendingImport.length}
+          onConfirm={handleImportConfirm}
+          onCancel={handleImportCancel}
         />
       )}
     </div>

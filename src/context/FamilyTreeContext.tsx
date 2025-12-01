@@ -19,6 +19,7 @@ interface FamilyTreeContextType {
     relatedId: string,
     type: 'parent' | 'child' | 'partner' | 'spouse'
   ) => void
+  importPeople: (people: Person[]) => void
 }
 
 const FamilyTreeContext = createContext<FamilyTreeContextType | undefined>(undefined)
@@ -204,6 +205,10 @@ export const FamilyTreeProvider = ({ children }: FamilyTreeProviderProps) => {
     })
   }
 
+  const importPeople = (importedPeople: Person[]) => {
+    setPeople(importedPeople)
+  }
+
   return (
     <FamilyTreeContext.Provider
       value={{
@@ -214,6 +219,7 @@ export const FamilyTreeProvider = ({ children }: FamilyTreeProviderProps) => {
         getPerson,
         addRelationship,
         removeRelationship,
+        importPeople,
       }}
     >
       {children}
