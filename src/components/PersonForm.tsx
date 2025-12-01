@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Person } from '../types/family'
+import type { Person } from '../types/family'
 import { format } from 'date-fns'
 import { useFamilyTree } from '../context/FamilyTreeContext'
 

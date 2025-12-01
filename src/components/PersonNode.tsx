@@ -1,6 +1,7 @@
 import { memo } from 'react'
-import { Handle, Position, NodeProps } from 'reactflow'
-import { Person } from '../types/family'
+import { Handle, Position } from 'reactflow'
+import type { NodeProps } from 'reactflow'
+import type { Person } from '../types/family'
 import { format } from 'date-fns'
 
 interface PersonNodeData {

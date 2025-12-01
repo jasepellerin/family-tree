@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { Person } from '../types/family'
+import { createContext, useContext, useState, useEffect } from 'react'
+import type { ReactNode } from 'react'
+import type { Person } from '../types/family'
 import { loadFamilyTree, saveFamilyTree } from '../services/storage'
 
 interface FamilyTreeContextType {
@@ -39,8 +40,13 @@ export const FamilyTreeProvider = ({ children }: FamilyTreeProviderProps) => {
 
   // Load from localStorage on mount
   useEffect(() => {
-    const loaded = loadFamilyTree()
-    setPeople(loaded)
+    try {
+      const loaded = loadFamilyTree()
+      setPeople(loaded)
+    } catch (error) {
+      console.error('Error loading family tree:', error)
+      setPeople([])
+    }
   }, [])
 
   // Save to localStorage whenever people change

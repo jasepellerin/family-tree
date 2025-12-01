@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
-import ReactFlow, { Node, Edge, Background, Controls, MiniMap, ReactFlowProvider } from 'reactflow'
+import ReactFlow, { Background, Controls, MiniMap, ReactFlowProvider } from 'reactflow'
+import type { Node, Edge } from 'reactflow'
 import { useFamilyTree } from '../context/FamilyTreeContext'
 import { PersonNode } from './PersonNode'
-import { Person } from '../types/family'
+import type { Person } from '../types/family'
 
 interface FamilyTreeViewProps {
   onNodeClick: (personId: string) => void
@@ -18,8 +19,6 @@ const calculateLayout = (people: Person[]): { nodes: Node[]; edges: Edge[] } => 
     return { nodes: [], edges: [] }
   }
 
-  const nodeWidth = 200
-  const nodeHeight = 120
   const horizontalSpacing = 250
   const verticalSpacing = 200
 
@@ -80,7 +79,7 @@ const calculateLayout = (people: Person[]): { nodes: Node[]; edges: Edge[] } => 
         position: { x, y },
         data: {
           person,
-          onNodeClick: (personId: string) => {
+          onNodeClick: () => {
             // This will be set by the parent component
           },
         },
@@ -142,9 +141,7 @@ const FamilyTreeViewInner = ({ onNodeClick }: FamilyTreeViewProps) => {
         <Background color="#e5e7eb" gap={16} />
         <Controls />
         <MiniMap
-          nodeColor={(node) => {
-            return '#6366f1'
-          }}
+          nodeColor={() => '#6366f1'}
           maskColor="rgba(0, 0, 0, 0.1)"
         />
       </ReactFlow>

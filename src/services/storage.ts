@@ -1,4 +1,4 @@
-import { FamilyTree, Person } from '../types/family'
+import type { FamilyTree, Person } from '../types/family'
 
 const STORAGE_KEY = 'family-tree-data'
 const CURRENT_VERSION = '1.0.0'
