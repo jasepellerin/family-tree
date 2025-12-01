@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import ReactFlow, { Background, Controls, ReactFlowProvider } from 'reactflow'
-import type { Node, Edge } from 'reactflow'
+import ReactFlow, { Background, Controls, ReactFlowProvider, BaseEdge, useNodes } from 'reactflow'
+import type { Node, Edge, EdgeProps } from 'reactflow'
 import { layoutFromMap } from 'entitree-flex'
 import type { TreeNode } from 'entitree-flex'
 import { useFamilyTree } from '../context/FamilyTreeContext'
@@ -15,6 +15,56 @@ interface FamilyTreeViewProps {
 
 const nodeTypes = {
   person: PersonNode,
+}
+
+// Custom horizontal edge for partners/spouses
+const HorizontalEdge = ({ source, target }: EdgeProps) => {
+  const nodes = useNodes()
+  const sourceNode = nodes.find((n) => n.id === source)
+  const targetNode = nodes.find((n) => n.id === target)
+
+  if (!sourceNode || !targetNode) {
+    return null
+  }
+
+  // Get node center positions
+  const nodeWidth = 180
+  const nodeHeight = 120
+  const sourceCenterX = sourceNode.position.x + nodeWidth / 2
+  const sourceCenterY = sourceNode.position.y + nodeHeight / 2
+  const targetCenterX = targetNode.position.x + nodeWidth / 2
+  const targetCenterY = targetNode.position.y + nodeHeight / 2
+
+  // Calculate midpoint Y (they should be on same level)
+  const midY = (sourceCenterY + targetCenterY) / 2
+
+  // Determine which node is left and which is right
+  const leftX = Math.min(sourceCenterX, targetCenterX)
+  const rightX = Math.max(sourceCenterX, targetCenterX)
+
+  // Calculate connection points (right side of left node, left side of right node)
+  const leftNodeRight = leftX + nodeWidth / 2
+  const rightNodeLeft = rightX - nodeWidth / 2
+
+  // Create horizontal path
+  const edgePath = `M ${leftNodeRight} ${midY} L ${rightNodeLeft} ${midY}`
+
+  return (
+    <g>
+      <BaseEdge
+        path={edgePath}
+        style={{
+          stroke: '#9ca3af',
+          strokeWidth: 2,
+          strokeDasharray: '5,5',
+        }}
+      />
+    </g>
+  )
+}
+
+const edgeTypes = {
+  horizontal: HorizontalEdge,
 }
 
 // Entitree-flex based hierarchical layout
@@ -63,7 +113,7 @@ const calculateLayout = (people: Person[]): { nodes: Node[]; edges: Edge[] } => 
     firstDegreeSpacing: 250, // Spacing between siblings (partners)
     secondDegreeSpacing: 250, // Spacing between different families
     sourceTargetSpacing: 200, // Vertical spacing between levels
-    nextAfterSpacing: 250, // Spacing for spouses/partners
+    nextAfterSpacing: 150, // Spacing for spouses/partners (reduced for tighter grouping)
     targetsAccessor: 'children',
     sourcesAccessor: 'parents',
     nextAfterAccessor: 'spouses',
@@ -99,7 +149,7 @@ const calculateLayout = (people: Person[]): { nodes: Node[]; edges: Edge[] } => 
     })
   })
 
-  // Create edges for partner/spouse relationships (dashed lines)
+  // Create edges for partner/spouse relationships (horizontal dashed lines)
   people.forEach((person) => {
     const allPartners = [...person.partnerIds, ...person.spouseIds]
     allPartners.forEach((partnerId) => {
@@ -108,8 +158,7 @@ const calculateLayout = (people: Person[]): { nodes: Node[]; edges: Edge[] } => 
           id: `edge-partner-${person.id}-${partnerId}`,
           source: person.id,
           target: partnerId,
-          type: 'straight',
-          style: { stroke: '#9ca3af', strokeWidth: 2, strokeDasharray: '5,5' },
+          type: 'horizontal',
           animated: false,
         })
       }
@@ -150,6 +199,7 @@ const FamilyTreeViewInner = ({ onNodeClick, onAddParent, onAddChild }: FamilyTre
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.1}
