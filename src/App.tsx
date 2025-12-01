@@ -1,27 +1,119 @@
 import { useState } from 'react'
+import { FamilyTreeProvider, useFamilyTree } from './context/FamilyTreeContext'
+import { FamilyTreeView } from './components/FamilyTreeView'
+import { PersonForm } from './components/PersonForm'
+import { DeleteConfirmDialog } from './components/DeleteConfirmDialog'
+import type { Person } from './types/family'
 
-function App() {
-  const [count, setCount] = useState(0)
+const AppContent = () => {
+  const { addPerson, updatePerson, deletePerson, getPerson } = useFamilyTree()
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [personToDelete, setPersonToDelete] = useState<Person | null>(null)
+
+  const selectedPerson = selectedPersonId ? getPerson(selectedPersonId) : undefined
+
+  const handleNodeClick = (personId: string) => {
+    setSelectedPersonId(personId)
+    setShowForm(true)
+  }
+
+  const handleAddPerson = () => {
+    setSelectedPersonId(null)
+    setShowForm(true)
+  }
+
+  const handleFormSubmit = (data: Omit<Person, 'id' | 'parentIds' | 'childIds' | 'partnerIds'>) => {
+    if (selectedPerson) {
+      updatePerson(selectedPerson.id, data)
+    } else {
+      addPerson({
+        ...data,
+        parentIds: [],
+        childIds: [],
+        partnerIds: [],
+      })
+    }
+    setShowForm(false)
+    setSelectedPersonId(null)
+  }
+
+  const handleFormCancel = () => {
+    setShowForm(false)
+    setSelectedPersonId(null)
+  }
+
+  const handleDeleteClick = () => {
+    if (selectedPerson) {
+      setPersonToDelete(selectedPerson)
+    }
+  }
+
+  const handleDeleteConfirm = () => {
+    if (personToDelete) {
+      deletePerson(personToDelete.id)
+      setPersonToDelete(null)
+      setShowForm(false)
+      setSelectedPersonId(null)
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setPersonToDelete(null)
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
-        <h1 className="text-4xl font-bold text-gray-800 mb-6 text-center">
-          Family Tree App
-        </h1>
-        <div className="text-center space-y-4">
-          <button
-            onClick={() => setCount((count) => count + 1)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200"
-          >
-            Count is {count}
-          </button>
-          <p className="text-gray-600">
-            Edit <code className="bg-gray-100 px-2 py-1 rounded text-sm">src/App.tsx</code> and save to test HMR
-          </p>
-        </div>
+    <div className="h-screen flex flex-col bg-gray-50">
+      {/* Toolbar */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+        <h1 className="text-2xl font-bold text-gray-800">Family Tree</h1>
+        <button
+          onClick={handleAddPerson}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+        >
+          Add Person
+        </button>
       </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex relative overflow-hidden">
+        {/* Tree View */}
+        <div className="flex-1">
+          <FamilyTreeView onNodeClick={handleNodeClick} />
+        </div>
+
+        {/* Form Sidebar */}
+        {showForm && (
+          <div className="w-96 bg-white border-l border-gray-200 shadow-lg overflow-y-auto">
+            <div className="p-4">
+              <PersonForm
+                person={selectedPerson}
+                onSubmit={handleFormSubmit}
+                onCancel={handleFormCancel}
+                onDelete={selectedPerson ? handleDeleteClick : undefined}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      {personToDelete && (
+        <DeleteConfirmDialog
+          personName={personToDelete.name}
+          onConfirm={handleDeleteConfirm}
+          onCancel={handleDeleteCancel}
+        />
+      )}
     </div>
+  )
+}
+
+function App() {
+  return (
+    <FamilyTreeProvider>
+      <AppContent />
+    </FamilyTreeProvider>
   )
 }
 
